@@ -1,0 +1,24 @@
+# Network Safety and TOR Requirements
+stem>=1.8.0
+PySocks>=1.7.1
+requests[socks]>=2.28.0
+geocoder>=1.38.1
+folium>=0.14.0
+
+# Additional requirements for enhanced security
+scapy>=2.5.0
+python-iptables>=1.0.0
+netifaces>=0.11.0
+psutil>=5.9.0
+
+# For Windows TOR control
+pywin32>=305
+
+# For packet analysis
+dpkt>=1.9.8
+pcapy-ng>=1.0.9
+
+# For ML-based threat detection (optional)
+scikit-learn>=1.3.0
+joblib>=1.3.0
+numpy>=1.24.0

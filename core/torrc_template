@@ -1,0 +1,46 @@
+# Hornet AI TOR Configuration
+# This file configures TOR for use with Hornet's network safety features
+
+# SOCKS proxy port
+SocksPort 9050
+
+# Control port for stem library
+ControlPort 9051
+
+# Authentication (password will be hashed by network_safety.py)
+# Hashed password for 'HornetTor123'
+HashedControlPassword 16:7041B21719FFBAD460984478C24B2E190D4DC9BFC51CA8694BEDAD9413
+
+# Circuit settings for IP rotation
+MaxCircuitDirtiness 10
+NewCircuitPeriod 10
+CircuitBuildTimeout 10
+LearnCircuitBuildTimeout 0
+CircuitStreamTimeout 10
+
+# Performance settings
+NumEntryGuards 3
+NumDirectoryGuards 3
+
+# Logging
+Log notice file ./tor_notices.log
+Log info file ./tor_info.log
+
+# Data directory
+DataDirectory ./tor_data
+
+# Exclude certain countries if needed (optional)
+# ExcludeNodes {US},{CA},{GB}
+# ExcludeExitNodes {US},{CA},{GB}
+
+# Strict nodes (optional - uncomment to use specific countries)
+# StrictNodes 1
+# ExitNodes {CH},{IS},{RO}
+
+# Bandwidth settings (optional - uncomment to limit)
+# BandwidthRate 1 MB
+# BandwidthBurst 2 MB
+
+# Hidden service configuration (optional - for hosting)
+# HiddenServiceDir ./hidden_service/
+# HiddenServicePort 80 127.0.0.1:8080

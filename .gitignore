@@ -3,6 +3,8 @@
 
 # 2. Now, create exceptions for the things we WANT to keep.
 # The "!" character means "do not ignore".
+
 !core/
+!core/**
 !requirements.txt
-!.gitignore
+

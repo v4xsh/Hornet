@@ -1,0 +1,173 @@
+import re
+import time
+import pyautogui
+import pygetwindow as gw
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from core.text_to_speech import speak
+from core.gemini_utils import generate_mail_content
+
+from core.voice_capture import record_voice_dynamic
+import speech_recognition as sr
+from pathlib import Path
+import os
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+CHROMEDRIVER_PATH = str(BASE_DIR / "drivers" / "chromedriver.exe")
+BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+USER_DATA_DIR = os.path.join(os.environ["USERPROFILE"], "AppData", "Local", "BraveSoftware", "Brave-Browser", "User Data")
+
+
+def launch_brave_driver():
+    options = webdriver.ChromeOptions()
+    options.binary_location = BRAVE_PATH
+    options.add_argument(f"user-data-dir={USER_DATA_DIR}")
+    options.add_argument("profile-directory=Default")
+    return webdriver.Chrome(service=Service(CHROMEDRIVER_PATH), options=options)
+
+
+def transcribe_temp_voice(filename="temp_voice.wav"):
+    r = sr.Recognizer()
+    with sr.AudioFile(filename) as source:
+        r.adjust_for_ambient_noise(source, duration=0.5)
+        audio = r.record(source)
+    try:
+        return r.recognize_google(audio).lower()
+    except:
+        return ""
+
+
+def send_mail_gmail(to_email, subject, body):
+    driver = launch_brave_driver()
+    driver.maximize_window()
+    driver.get("https://mail.google.com/mail/u/0/#inbox?compose=new")
+
+    try:
+        wait = WebDriverWait(driver, 20)
+        compose_box = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div[role='dialog']")))
+
+        brave_window = gw.getWindowsWithTitle("Brave")[0]
+        browser_x = brave_window.left
+        browser_y = brave_window.top
+
+        subject_input = compose_box.find_element(By.NAME, "subjectbox")
+        driver.execute_script("arguments[0].scrollIntoView(true);", subject_input)
+        wait.until(EC.visibility_of(subject_input))
+        time.sleep(0.5)
+
+        subject_input.click()
+        subject_input.send_keys(subject)
+        time.sleep(0.5)
+
+        subject_rect = subject_input.rect
+        subject_center_x = browser_x + subject_rect['x'] + subject_rect['width'] // 2
+        subject_center_y = browser_y + subject_rect['y'] + subject_rect['height'] // 2
+
+        corrected_y = subject_center_y + 230
+        corrected_x = subject_center_x + 80
+        pyautogui.moveTo(corrected_x, corrected_y, duration=0.5)
+        pyautogui.click()
+        time.sleep(0.5)
+
+        speak("Typing the recipient email.")
+        pyautogui.write(to_email, interval=0.05)
+        pyautogui.press("enter")
+        time.sleep(0.5)
+
+        body_div = compose_box.find_element(By.CSS_SELECTOR, "div[aria-label='Message Body']")
+        body_div.click()
+        time.sleep(0.5)
+        full_body = f"Hi there,\n\n{body}\n\nBest regards,\nVansh"
+        body_div.send_keys(full_body)
+
+        speak("Here is the mail. Do you want me to send it?")
+        max_tries = 2
+        confirmed = False
+
+        for attempt in range(max_tries):
+            success, path,_= record_voice_dynamic(timeout=7, preserve_temp=True)
+            if success:
+                response = transcribe_temp_voice(path)
+                print("User confirmation:", response)
+                if any(kw in response for kw in ["yes", "send", "send it", "you can send"]):
+                    send_btn = compose_box.find_element(By.CSS_SELECTOR, "div[role='button'][data-tooltip*='Send']")
+                    send_btn.click()
+                    speak("Mail sent successfully.")
+                    confirmed = True
+                    break
+                elif any(kw in response for kw in ["no", "don't", "do not", "not now"]):
+                    speak("Okay, not sending the mail.")
+                    confirmed = True
+                    break
+                else:
+                    speak("Sorry, I couldn't understand. Do you want me to send it?")
+            else:
+                speak("No voice detected. Should I send the mail or not?")
+
+        if not confirmed:
+            speak("Still no confirmation. Canceling the mail.")
+
+    except Exception as e:
+        speak("Something went wrong while sending the mail.")
+        print("❌ Error in Gmail automation:", e)
+
+    finally:
+        time.sleep(5)
+        driver.quit()
+
+
+def handle_send_mail(command=None):
+    speak("Let's begin. Please spell the email username letter by letter.")
+
+    success, path,_ = record_voice_dynamic(timeout=10, preserve_temp=True)
+    if success:
+        username_raw = transcribe_temp_voice(path)
+        print("✉️ Raw username:", username_raw)
+        username = username_raw.replace(" dash ", "-").replace(" underscore ", "_").replace(" ", "")
+    else:
+        speak("Sorry, I couldn't hear the username.")
+        return
+
+    speak("Which domain is it? Gmail, Yahoo, Outlook?")
+    success, path,_ = record_voice_dynamic(timeout=6, preserve_temp=True)
+    if success:
+        domain_input = transcribe_temp_voice(path).lower()
+    else:
+        speak("No voice detected for domain.")
+        return
+
+    domain_map = {
+        "gmail": "gmail.com",
+        "yahoo": "yahoo.com",
+        "outlook": "outlook.com",
+        "hotmail": "hotmail.com",
+        "rediffmail": "rediffmail.com"
+    }
+    domain = domain_map.get(domain_input.strip())
+    if not domain:
+        speak("Sorry, I couldn't recognize the domain.")
+        return
+
+    to_email = username + "@" + domain
+    speak(f"Got it. Now tell me what should I write in the email to {to_email}?")
+
+    success, path,_ = record_voice_dynamic(timeout=20, preserve_temp=True)
+    if success:
+        description = transcribe_temp_voice(path)
+    else:
+        speak("No voice detected for description.")
+        return
+
+    speak("Generating a professional email.")
+    result = generate_mail_content(description)
+    if not isinstance(result, dict) or 'subject' not in result:
+        speak("Something went wrong while generating the email.")
+        return
+
+    subject = result["subject"]
+    body = result["body"]
+    speak("Opening Gmail and sending the mail now.")
+    send_mail_gmail(to_email, subject, body)

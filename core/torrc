@@ -1,0 +1,9 @@
+
+SocksPort 9050
+ControlPort 9051
+HashedControlPassword 16:AFC14115B48033D6602613309B859F683AAA0D677843B438C070E1EDE6
+MaxCircuitDirtiness 10
+NewCircuitPeriod 10
+CircuitBuildTimeout 10
+LearnCircuitBuildTimeout 0
+CircuitStreamTimeout 10

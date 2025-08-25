@@ -1,0 +1,75 @@
+Jul 26 18:31:01.000 [notice] Tor 0.4.8.7 (git-bf5e234d44e73127) opening new log file.
+Jul 26 18:31:01.653 [notice] We compiled with OpenSSL 300000b0: OpenSSL 3.0.11 19 Sep 2023 and we are running with OpenSSL 300000b0: 3.0.11. These two versions should be binary compatible.
+Jul 26 18:31:01.658 [notice] Tor 0.4.8.7 (git-bf5e234d44e73127) running on Windows 8 [or later] with Libevent 2.1.12-stable, OpenSSL 3.0.11, Zlib 1.3, Liblzma N/A, Libzstd N/A and Unknown N/A as libc.
+Jul 26 18:31:01.658 [notice] Tor can't help you if you use it wrong! Learn how to be safe at https://support.torproject.org/faq/staying-anonymous/
+Jul 26 18:31:01.712 [notice] Read configuration file "C:\Users\Vansh\OneDrive\Documents\Hornet AI\core\torrc".
+Jul 26 18:31:01.714 [warn] Path for DataDirectory (./tor_data) is relative and will resolve to C:\Users\Vansh\OneDrive\Documents\Hornet AI\core\tor_data. Is this what you wanted?
+Jul 26 18:31:01.714 [warn] Path for GeoIPFile (<default>) is relative and will resolve to C:\Users\Vansh\OneDrive\Documents\Hornet AI\core\<default>. Is this what you wanted?
+Jul 26 18:31:01.715 [warn] Path for GeoIPv6File (<default>) is relative and will resolve to C:\Users\Vansh\OneDrive\Documents\Hornet AI\core\<default>. Is this what you wanted?
+Jul 26 18:31:01.721 [notice] Opening Socks listener on 127.0.0.1:9050
+Jul 26 18:31:01.722 [notice] Opened Socks listener connection (ready) on 127.0.0.1:9050
+Jul 26 18:31:01.722 [notice] Opening Control listener on 127.0.0.1:9051
+Jul 26 18:31:01.722 [notice] Opened Control listener connection (ready) on 127.0.0.1:9051
+Jul 26 18:31:01.000 [warn] Your log may contain sensitive information - you're logging more than "notice". Don't log unless it serves an important reason. Overwrite the log afterwards.
+Jul 26 18:31:01.000 [notice] Bootstrapped 0% (starting): Starting
+Jul 26 18:31:01.000 [notice] Starting with guard context "default"
+Jul 26 18:31:02.000 [notice] Bootstrapped 5% (conn): Connecting to a relay
+Jul 26 18:31:03.000 [notice] Bootstrapped 10% (conn_done): Connected to a relay
+Jul 26 18:31:04.000 [notice] Bootstrapped 14% (handshake): Handshaking with a relay
+Jul 26 18:31:04.000 [notice] Bootstrapped 15% (handshake_done): Handshake with a relay done
+Jul 26 18:31:04.000 [notice] Bootstrapped 20% (onehop_create): Establishing an encrypted directory connection
+Jul 26 18:31:04.000 [notice] Bootstrapped 25% (requesting_status): Asking for networkstatus consensus
+Jul 26 18:31:05.000 [notice] Bootstrapped 30% (loading_status): Loading networkstatus consensus
+Jul 26 18:31:07.000 [notice] I learned some more directory information, but not enough to build a circuit: We have no usable consensus.
+Jul 26 18:31:07.000 [notice] Bootstrapped 40% (loading_keys): Loading authority key certs
+Jul 26 18:31:07.000 [notice] The current consensus has no exit nodes. Tor can only build internal paths, such as paths to onion services.
+Jul 26 18:31:07.000 [notice] Bootstrapped 45% (requesting_descriptors): Asking for relay descriptors
+Jul 26 18:31:07.000 [notice] I learned some more directory information, but not enough to build a circuit: We need more microdescriptors: we have 0/8902, and can only build 0% of likely paths. (We have 0% of guards bw, 0% of midpoint bw, and 0% of end bw (no exits in consensus, using mid) = 0% of path bw.)
+Jul 26 18:31:08.000 [notice] I learned some more directory information, but not enough to build a circuit: We need more microdescriptors: we have 0/8902, and can only build 0% of likely paths. (We have 0% of guards bw, 0% of midpoint bw, and 0% of end bw (no exits in consensus, using mid) = 0% of path bw.)
+Jul 26 18:31:09.000 [notice] Bootstrapped 50% (loading_descriptors): Loading relay descriptors
+Jul 26 18:31:20.000 [notice] The current consensus contains exit nodes. Tor can build exit and internal paths.
+Jul 26 18:31:30.000 [notice] Bootstrapped 56% (loading_descriptors): Loading relay descriptors
+Jul 26 18:31:30.000 [notice] Bootstrapped 61% (loading_descriptors): Loading relay descriptors
+Jul 26 18:31:31.000 [notice] Bootstrapped 68% (loading_descriptors): Loading relay descriptors
+Jul 26 18:31:31.000 [notice] Bootstrapped 73% (loading_descriptors): Loading relay descriptors
+Jul 26 18:31:32.000 [notice] Bootstrapped 75% (enough_dirinfo): Loaded enough directory info to build circuits
+Jul 26 18:31:32.000 [notice] Bootstrapped 90% (ap_handshake_done): Handshake finished with a relay to build circuits
+Jul 26 18:31:32.000 [notice] Bootstrapped 95% (circuit_create): Establishing a Tor circuit
+Jul 26 18:31:33.000 [notice] Bootstrapped 100% (done): Done
+Jul 26 18:35:39.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 18:45:15.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 19:01:55.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 19:13:07.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 19:16:19.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 20:09:24.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 20:15:16.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 20:18:52.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 20:23:33.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 20:27:36.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 20:28:50.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 20:31:04.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 21:38:41.000 [notice] Tor 0.4.8.7 (git-bf5e234d44e73127) opening log file.
+Jul 26 21:38:41.355 [notice] We compiled with OpenSSL 300000b0: OpenSSL 3.0.11 19 Sep 2023 and we are running with OpenSSL 300000b0: 3.0.11. These two versions should be binary compatible.
+Jul 26 21:38:41.360 [notice] Tor 0.4.8.7 (git-bf5e234d44e73127) running on Windows 8 [or later] with Libevent 2.1.12-stable, OpenSSL 3.0.11, Zlib 1.3, Liblzma N/A, Libzstd N/A and Unknown N/A as libc.
+Jul 26 21:38:41.360 [notice] Tor can't help you if you use it wrong! Learn how to be safe at https://support.torproject.org/faq/staying-anonymous/
+Jul 26 21:38:41.407 [notice] Read configuration file "C:\Users\Vansh\OneDrive\Documents\Hornet AI\core\torrc".
+Jul 26 21:38:41.407 [warn] Path for DataDirectory (./tor_data) is relative and will resolve to C:\Users\Vansh\OneDrive\Documents\Hornet AI\core\tor_data. Is this what you wanted?
+Jul 26 21:38:41.407 [warn] Path for GeoIPFile (<default>) is relative and will resolve to C:\Users\Vansh\OneDrive\Documents\Hornet AI\core\<default>. Is this what you wanted?
+Jul 26 21:38:41.407 [warn] Path for GeoIPv6File (<default>) is relative and will resolve to C:\Users\Vansh\OneDrive\Documents\Hornet AI\core\<default>. Is this what you wanted?
+Jul 26 21:38:41.411 [notice] Opening Socks listener on 127.0.0.1:9050
+Jul 26 21:38:41.411 [notice] Opened Socks listener connection (ready) on 127.0.0.1:9050
+Jul 26 21:38:41.411 [notice] Opening Control listener on 127.0.0.1:9051
+Jul 26 21:38:41.411 [notice] Opened Control listener connection (ready) on 127.0.0.1:9051
+Jul 26 21:38:41.000 [warn] Your log may contain sensitive information - you're logging more than "notice". Don't log unless it serves an important reason. Overwrite the log afterwards.
+Jul 26 21:38:41.000 [notice] Bootstrapped 0% (starting): Starting
+Jul 26 21:38:42.000 [notice] Starting with guard context "default"
+Jul 26 21:38:42.000 [notice] Bootstrapped 5% (conn): Connecting to a relay
+Jul 26 21:38:42.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 21:38:42.000 [notice] New control connection opened from 127.0.0.1.
+Jul 26 21:38:43.000 [notice] Bootstrapped 10% (conn_done): Connected to a relay
+Jul 26 21:38:44.000 [notice] Bootstrapped 14% (handshake): Handshaking with a relay
+Jul 26 21:38:45.000 [notice] Bootstrapped 15% (handshake_done): Handshake with a relay done
+Jul 26 21:38:45.000 [notice] Bootstrapped 75% (enough_dirinfo): Loaded enough directory info to build circuits
+Jul 26 21:38:45.000 [notice] Bootstrapped 90% (ap_handshake_done): Handshake finished with a relay to build circuits
+Jul 26 21:38:45.000 [notice] Bootstrapped 95% (circuit_create): Establishing a Tor circuit
+Jul 26 21:38:46.000 [notice] Bootstrapped 100% (done): Done
