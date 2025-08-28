@@ -3,7 +3,7 @@ from core.text_to_speech import speak
 from core.text_to_speech import stop_buffering
 
 # Gemini API Setup
-GEMINI_API_KEY = "AIzaSyAi3RFimnFMykgvNuQE9bf9pseEFVdp0zw"
+GEMINI_API_KEY = "AIzaSyDQX_kQmY6fOJV541r1y51MfsVqOAvy4Ak"
 genai.configure(api_key=GEMINI_API_KEY)
 
 gemini_model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")

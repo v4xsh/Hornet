@@ -12,12 +12,18 @@ class UnsupervisedDetector:
     def _featurize(self, flows: List[Dict]) -> np.ndarray:
         X = []
         for f in flows:
+            l_port = f.get("l_port", 0)
+            r_port = f.get("r_port", 0)
+            status = f.get("status", "UNKNOWN")
+            is_private_dst = f.get("is_private_dst", 0)
+            proc = f.get("proc", "unknown")
+
             X.append([
-                _port_bucket(f["l_port"]),
-                _port_bucket(f["r_port"]),
-                1 if f["status"] == "ESTABLISHED" else 0,
-                1 if f["is_private_dst"] else 0,
-                hash(f["proc"]) % 1000 / 1000.0,
+                _port_bucket(l_port),
+                _port_bucket(r_port),
+                1 if status == "ESTABLISHED" else 0,
+                1 if is_private_dst else 0,
+                hash(proc) % 1000 / 1000.0,
             ])
         return np.array(X, dtype=np.float32) if X else np.zeros((0, 5), dtype=np.float32)
 
