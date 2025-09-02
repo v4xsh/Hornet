@@ -1,82 +1,39 @@
 import os
 import re
-import speech_recognition as sr
-from core.text_to_speech import speak, start_buffering
-from core.voice_auth import cleanup_temp_voice
-from core.voice_capture import record_voice_dynamic
+from core.text_to_speech import speak
+# REMOVED: Unnecessary imports for the old workflow
+# from core.voice_auth import cleanup_temp_voice
+# from core.voice_capture import record_voice_dynamic
+# import speech_recognition as sr
+
 from core.whatsapp import send_whatsapp_message, extract_contact_and_message, extract_voice_note_command, send_whatsapp_voice_note
 from core.youtube import play_top_youtube_video, search_and_type_on_site
 from core.system_tasks import perform_system_task
 from core.browser import open_any_website, close_application, search_in_chrome
 from core.mail_assistant import handle_send_mail
 from core.screen_recording import start_screen_recording, stop_screen_recording, view_recording, last_recording_path
-from core.basic_features import change_volume, change_brightness, take_screenshot, view_screenshot
+from core.basic_features import change_volume, change_brightness, take_screenshot, view_screenshot, open_recycle_bin, empty_recycle_bin
 from core.extra_skills import repeat_after_me, set_timer, tell_about_person, tell_about_topic, explain_meaning
 from core.music import play_song_on_spotify
 from core.gemini import get_gemini_response
 from core.utils import resource_path
 from core.phone import call_contact, open_app_on_phone, lock_phone_screen, is_phone_connected, send_phone_basic_action
-from core.basic_features import open_recycle_bin, empty_recycle_bin
 from core.enroll_voice import update_embedding
 from core.firewall import start_firewall_monitor, stop_firewall_monitor, trace_last_threat
 from core.network_safety import network_safety
 from core.hand_object_detector import identify_object_in_hand
 
-
-
-
-voice_verification_enabled = True
-
 class CommandHandler:
     def __init__(self, gui_instance):
         self.gui = gui_instance
 
-    def handle(self):
-        global voice_verification_enabled
-        path = None
-        try:
-            speak("Listening...")
-            success, path, match_status = record_voice_dynamic(timeout=60, preserve_temp=True)
-            if not success or not path:
-                speak("No voice detected.")
-                return
-
-            r = sr.Recognizer()
-            with sr.AudioFile(path) as source:
-                r.adjust_for_ambient_noise(source, duration=0.5)
-                audio = r.record(source)
-                try:
-                    command = r.recognize_google(audio)
-                    print("You said:", command)
-                    self.gui.add_text("You: " + command)
-                except sr.UnknownValueError:
-                    speak("Sorry, I didn't understand that.")
-                    return
-                except sr.RequestError:
-                    speak("Speech recognition error.")
-                    return
-
-            if voice_verification_enabled:
-                if match_status != "match":
-                    self.gui.add_text("[Security] Unauthorized voice.")
-                    return
-                else:
-                    speak("Voice matched. Processing your command...")
-                    self.gui.add_text("[Security] Voice verified.")
-                    # update_embedding()
-            else:
-                print("🔓 Voice verification skipped.")
-
-            self.handle_text(command.lower().strip())
-
-        except Exception as e:
-            self.gui.add_text("[Security Error] Voice check failed.")
-            speak("Voice verification failed. Try again.")
-        finally:
-            if path and "sample_" not in os.path.basename(path):
-                cleanup_temp_voice(path)
+    # REMOVED: The old handle() method is no longer needed.
+    # Its logic has been moved into the main Hornet.py file for better efficiency.
 
     def handle_text(self, command):
+        """
+        This is the main function that processes the transcribed text command.
+        """
         command = command.lower().strip()
         self.gui.add_text("You: " + command)
         phone_connected = is_phone_connected()
@@ -153,7 +110,6 @@ class CommandHandler:
                 return
 
         # ✅ PC-SPECIFIC HANDLING
-
         if command == "network error":
             self.gui.add_text("[System] Network error")
             speak("Network error.")
@@ -163,11 +119,11 @@ class CommandHandler:
             speak("Launching Jarvis version one. Buckle up.")
             os.system("python jarvis_ui.py")
             return
+            
         if "what is in my hand" in command:
-           identify_object_in_hand()
-           return
+            identify_object_in_hand()
+            return
 
-        contact, message = extract_contact_and_message(command)
         voice_contact, voice_message = extract_voice_note_command(command)
         if voice_contact and voice_message:
             self.gui.add_text(f"Sending voice note to {voice_contact}: {voice_message}")
@@ -178,6 +134,18 @@ class CommandHandler:
                 speak("Failed to send the voice note.")
                 self.gui.add_text(f"[Error] {e}")
             return
+            
+        contact, message = extract_contact_and_message(command)
+        if contact and message:
+            self.gui.add_text(f"Sending WhatsApp message to {contact}: {message}")
+            speak(f"Sending your message to {contact}")
+            try:
+                send_whatsapp_message(contact, message)
+            except Exception as e:
+                speak("Failed to send the WhatsApp message.")
+                self.gui.add_text(f"[Error] {e}")
+            return
+            
         if "start firewall mode" in command or "enable hornet firewall" in command:
             speak("Enabling Hornet Firewall Mode.")
             self.gui.add_text("[Firewall] 🔥 Starting Hornet Firewall...")
@@ -300,18 +268,6 @@ class CommandHandler:
            generate_code_project(prompt)
            return
 
-
-
-        if contact and message:
-            self.gui.add_text(f"Sending WhatsApp message to {contact}: {message}")
-            speak(f"Sending your message to {contact}")
-            try:
-                send_whatsapp_message(contact, message)
-            except Exception as e:
-                speak("Failed to send the WhatsApp message.")
-                self.gui.add_text(f"[Error] {e}")
-            return
-
         if hasattr(self.gui, 'waiting_for_video_prompt') and self.gui.waiting_for_video_prompt:
             self.gui.waiting_for_video_prompt = False
             follow_up = command.replace("play", "").strip()
@@ -360,14 +316,14 @@ class CommandHandler:
         if "view screenshot" in command or "show screenshot" in command:
             view_screenshot()
             return
+            
         if "open recycle bin" in command:
-           open_recycle_bin()
-           return
+            open_recycle_bin()
+            return
 
         if "empty recycle bin" in command:
-           empty_recycle_bin()
-           return
-
+            empty_recycle_bin()
+            return
 
         if "screenshot" in command:
             take_screenshot()
@@ -422,6 +378,7 @@ class CommandHandler:
             percent = int(re.search(r"set brightness to (\d+)", command).group(1))
             change_brightness(percent=percent)
             return
+            
         if "open" in command:
             if open_any_website(command):
                 return
@@ -458,9 +415,9 @@ class CommandHandler:
             self.gui.root.quit()
             return
 
-        # Gemini fallback
+        # # Gemini fallback
+        # speak("I'm not sure how to do that, but let me ask my generative AI.")
         # self.gui.add_text("AI is thinking...")
-        # start_buffering()
         # gemini_response = get_gemini_response(command)
         # speak(gemini_response)
         # self.gui.add_text("AI: " + gemini_response)

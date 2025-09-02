@@ -1,266 +1,98 @@
-from core.face_auth import verify_face
-from core.text_to_speech import speak
-import asyncio
-import pyttsx3
-import edge_tts
-from playsound import playsound
-import speech_recognition as sr
-import webbrowser
-import wikipedia
-import pywhatkit
-import pygetwindow as gw
-import pyautogui
-import psutil
-import os
-import random
+# core/Hornet.py
+
+# --- IMPORTS ---
 import tkinter as tk
-from threading import Thread
 from tkinter import PhotoImage, Scrollbar, Text, END, DISABLED, NORMAL
 from PIL import Image, ImageTk, ImageSequence
+import threading
+import time
+import os
 import sys
-import os
-import subprocess
-import platform
-import google.generativeai as genai
-import threading
-import pygame
-from core.text_to_speech import speak, start_buffering, stop_buffering
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import time
-import webbrowser
-import pyautogui
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.keys import Keys
-import time
-from scipy.io.wavfile import write
-import numpy as np
-from core.voice_auth import is_vansh_speaking
-import sounddevice as sd
-import scipy.io.wavfile as wav
-import os
-import soundfile as sf
-import speech_recognition as sr
-from core.voice_auth import is_vansh_speaking, record_voice
-from screen_brightness_control import set_brightness, get_brightness
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from comtypes import CLSCTX_ALL
-from ctypes import cast, POINTER
-import cv2
-from core.mail_assistant import handle_send_mail
-from core.voice_capture import record_voice_dynamic
-from core.basic_features import (
-    take_screenshot, view_screenshot,
-    change_volume, change_brightness
-)
-from core.command_handler import CommandHandler
-from core.screen_recording import start_screen_recording, stop_screen_recording
-import pyautogui
-import pygame
-import pyautogui
-import time
-import os
-from core.text_to_speech import speak
-from datetime import datetime
-from playsound import playsound  # Works with WAV too
-
-from core.utils import resource_path
-
 import datetime
-import pyautogui
-import pygame
-import os
-from core.text_to_speech import speak
-from core.screen_recording import start_screen_recording, stop_screen_recording, last_recording_path
-from core.text_to_speech import speak
-from core.screen_recording import (
-    start_screen_recording,
-    stop_screen_recording,
-    get_last_recording_path
-)
 
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from ctypes import cast, POINTER
-from comtypes import CLSCTX_ALL
-import math
-# screen_recording.py
-import cv2
-import pyautogui
-import numpy as np
-import threading
-
-import threading
+# --- CORE MODULES ---
+from core.text_to_speech import speak
+from core.voice_auth import is_vansh_speaking
+from core.command_handler import CommandHandler
 from core.enroll_voice import update_embedding
+from core.speech_recognition_proxy import proxy_aware_sr 
 
-def should_rebuild_embedding(folder):
-    try:
-        emb_time = os.path.getmtime(os.path.join(folder, "vansh_embedding.pt"))
-        latest_wav_time = max(os.path.getmtime(os.path.join(folder, f))
-                              for f in os.listdir(folder)
-                              if f.endswith(".wav") and f.startswith("sample_"))
-        return latest_wav_time > emb_time
-    except Exception:
-        return True  # No embedding or error
+# --- UTILITIES ---
+import sounddevice as sd
+import numpy as np
+import soundfile as sf
 
-def start_background_embedding_update():
-    folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), "voice_data")
-    if should_rebuild_embedding(folder):
-        print("🔄 Detected newer voice samples — updating embedding in background...")
-        threading.Thread(target=update_embedding, name="StartupEmbeddingUpdater", daemon=True).start()
-    else:
-        print("✅ Embedding already up to date.")
+# ==============================================================================
+#  UNIFIED VOICE CAPTURE FUNCTION
+# ==============================================================================
 
-# 🔁 Run this once on app start (non-blocking)
-start_background_embedding_update()
-recording = False
-recording_thread = None
-def listen(self):
-        from core.voice_auth import record_voice
-        import speech_recognition as sr
+def listen_verify_and_transcribe(timeout=8):
+    fs = 16000
+    silence_limit_sec = 2.0
+    threshold = 0.01
 
-        record_voice_dynamic("temp_voice.wav")
+    print("🎙️  Listening for command...")
+    recorded_frames = []
+    is_speaking = False
+    silence_frames = 0
+    max_silence_frames = int(silence_limit_sec * fs / 1024)
 
-        r = sr.Recognizer()
-        with sr.AudioFile("temp_voice.wav") as source:
-            r.adjust_for_ambient_noise(source, duration=0.5)
-            audio = r.record(source)
-        try:
-            command = r.recognize_google(audio)
-            print("You said:", command)
-            return command.lower()
-        except:
-            return "error"
+    def callback(indata, frames, time, status):
+        nonlocal is_speaking, silence_frames
+        if np.linalg.norm(indata) > threshold:
+            is_speaking = True
+            silence_frames = 0
+        elif is_speaking:
+            silence_frames += 1
+        if is_speaking:
+            recorded_frames.append(indata.copy())
 
-def process_command(self, command):
-        if "youtube" in command:
-            import webbrowser
-            webbrowser.open("https://www.youtube.com")
-            self.ui.show_waifu_response("Opening YouTube...")
-        else:
-            self.ui.show_waifu_response("Unknown command.")
-def listen_and_record():
-    # speak("Listening...")
-    filename = "temp_voice.wav"
+    stream = sd.InputStream(samplerate=fs, channels=1, dtype='float32', callback=callback)
+    with stream:
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if is_speaking and silence_frames > max_silence_frames:
+                break
+            time.sleep(0.1)
 
-    duration = 2  # adjust if needed
-    fs = 44100
+    if not recorded_frames:
+        print("📉 No voice detected.")
+        return None, "no-voice"
 
-    # Record voice
-    recording = sd.rec(int(duration * fs), samplerate=fs, channels=1)
-    sd.wait()
-    sf.write(filename, recording, fs)
-    print("Voice recorded to", filename)
+    audio_data = np.concatenate(recorded_frames).flatten()
+    match_status = is_vansh_speaking(audio_data, sr=fs)
 
-    # Transcribe using Google Speech Recognition
-    r = sr.Recognizer()
-    with sr.AudioFile(filename) as source:
-        r.adjust_for_ambient_noise(source, duration=0.5)
-        audio = r.record(source)
-        try:
-            command = r.recognize_google(audio)
-            print("You said:", command)
-            return command
-        except sr.UnknownValueError:
-            speak("Sorry, I didn't understand that.")
-            return ""
-        except sr.RequestError:
-            speak("Could not request results.")
-            return ""
-def record_temp_voice(duration=2, filename="temp_voice.wav"):
-    fs = 44100  # High-quality sample rate
-    print("Recording voice...")
+    if match_status != "match":
+        return None, match_status
+
+    # ✅ --- START OF THE FIX ---
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")) 
+    folder = os.path.join(project_root, "voice_data")
+    os.makedirs(folder, exist_ok=True)
     
-    recording = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype='int16')
-    sd.wait()  # Wait until recording is done
-
-    # Check if recording is audible (not silence)
-    if np.max(np.abs(recording)) < 1000:
-        raise Exception("Recording too quiet. Please speak louder.")
-
-    # Save to temp file
-    wav.write(filename, fs, recording)
-    print(f"Voice recorded to {filename}")
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and PyInstaller """
-    try:
-        base_path = sys._MEIPASS
-    except AttributeError:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-
-listener = sr.Recognizer()
-
-engine = pyttsx3.init()
-engine.setProperty('rate', 180)
-engine.setProperty('volume', 1.0)
-
-def listen_command():
-    with sr.Microphone() as source:
-        print("Listening...")
-        listener.adjust_for_ambient_noise(source)
-        audio = listener.listen(source, phrase_time_limit=5)
-    try:
-        command = listener.recognize_google(audio).lower()
-        print("You:", command)
-        return command
-    except sr.UnknownValueError:
-        return ""
-    except sr.RequestError:
-        return "network error"
-
-def search_anything(command):
-    if "search" in command:
-        command = command.lower()
-
-        query = command.replace("search", "").replace("for", "").strip()
-
-        if "youtube" in command:
-            query = query.replace("on youtube", "").strip()
-            speak(f"Searching YouTube for {query}")
-            webbrowser.open(f"https://www.youtube.com/results?search_query={query}")
-
-        elif "chat gpt" in command:
-            query = query.replace("on chat gpt", "").strip()
-            speak(f"Searching ChatGPT for {query}")
-            webbrowser.open(f"https://chat.openai.com/?q={query}")
-
-        else:
-            query = query.replace("on google", "").strip()
-            speak(f"Searching Google for {query}")
-            webbrowser.open(f"https://www.google.com/search?q={query}")
-
-
-
-def time_based_greeting():
-    hour = datetime.datetime.now().hour
-    if 5 <= hour < 12:
-        speak("Good morning! Vansh How can I help you today?")
-    elif 12 <= hour < 17:
-        speak("Good afternoon vansh")
-        time.sleep(0.001)
-        speak("how are you doing?")
-    elif 17 <= hour < 22:
-        speak("Good evening vansh! 🌆 Need any assistance?")
+    existing_samples = [f for f in os.listdir(folder) if f.startswith("sample_") and f.endswith(".wav")]
+    
+    if not existing_samples:
+        next_index = 1
     else:
-        speak("Hello! It's quite late. Do you need help with something?")
+        # Find the highest number in the existing filenames and add 1
+        indices = [int(f.split('_')[1].split('.')[0]) for f in existing_samples]
+        next_index = max(indices) + 1
+        
+    final_path = os.path.join(folder, f"sample_{next_index}.wav")
+    sf.write(final_path, audio_data, fs)
+    # ✅ --- END OF THE FIX ---
+    
+    print(f"✅ Verified voice saved for training -> {final_path}")
+    
+    print("🎤 Transcribing command...")
+    command = proxy_aware_sr.recognize_audio(final_path)
+    
+    return command, match_status
 
-def handle_small_talk(command):
-    command = command.lower()
-    for key in responses:
-        if key in command:
-            speak(random.choice(responses[key]))
-            return True
-    return False
+# ==============================================================================
+#  GUI AND MAIN APP LOGIC
+# ==============================================================================
 
 class AssistantGUI:
     def __init__(self, root):
@@ -271,178 +103,137 @@ class AssistantGUI:
         self.root.resizable(False, False)
         self.root.wm_attributes("-topmost", True)
         self.command_handler = CommandHandler(self)
-        self.canvas = tk.Canvas(self.root, width=800, height=700, highlightthickness=0)
-        self.canvas.pack(fill="both", expand=True)
-
-        gif = Image.open(resource_path("assets/goku.gif"))
-        frame_size = (800, 600)
-        self.frames = [ImageTk.PhotoImage(img.resize(frame_size, Image.LANCZOS).convert('RGBA'))
-                       for img in ImageSequence.Iterator(gif)]
-        self.gif_index = 0
-        self.bg_image = self.canvas.create_image(0, 0, anchor='nw', image=self.frames[0])
-        self.animate()
-
-        self.root.configure(bg="#000000")
         
+        self.ui_initialized = False
+        self.setup_ui()
+        
+        if self.ui_initialized:
+            self.root.bind("<F2>", lambda e: threading.Thread(target=self.run_voice_command, daemon=True).start())
+            threading.Thread(target=self.time_based_greeting, daemon=True).start()
+            self.start_wake_word_listener()
+        else:
+            print("❌ UI setup failed. Halting background thread initialization.")
+            if hasattr(self, 'chat_log'):
+                self.add_text("[FATAL ERROR] UI setup failed. Check asset paths.")
 
-        self.chat_log = Text(
-            self.root,
+    def setup_ui(self):
+        try:
+            self.canvas = tk.Canvas(self.root, width=800, height=700, highlightthickness=0)
+            self.canvas.pack(fill="both", expand=True)
+
+            gif_path = self.resource_path("assets/goku.gif")
+            if not os.path.exists(gif_path):
+                print(f"Error: GIF file not found at {gif_path}")
+                self.canvas.create_text(400, 350, text=f"ERROR: Asset not found\n{gif_path}", fill="red", font=("Consolas", 14))
+                return
             
-            bg="#000000",
-            fg="sky blue",
-            font=("Consolas", 10,),
-            wrap='word',
+            gif = Image.open(gif_path)
+            frame_size = (800, 600)
+            self.frames = [ImageTk.PhotoImage(img.resize(frame_size, Image.LANCZOS).convert('RGBA'))
+                           for img in ImageSequence.Iterator(gif)]
+            self.gif_index = 0
+            self.bg_image = self.canvas.create_image(0, 0, anchor='nw', image=self.frames[0])
+            self.animate()
             
-            bd=0
-        )
-        self.chat_log.place(x=0, y=600, width=800, height=100)
-        self.chat_log.insert(END, "[System] Type your command below or press F2 to speak.\n")
-        self.chat_log.config(state=tk.DISABLED)
-
-        scrollbar = Scrollbar(self.chat_log)
-        scrollbar.pack(side="right", fill="y")
-
-        self.entry = tk.Entry(self.root, font=("Segoe UI", 13), bg="#1a1a1a", fg="white", bd=3, insertbackground='white')
-        self.entry.place(x=20, y=670, width=700, height=30)
-        self.entry.bind("<Return>", self.send_text)
-
-        send_button = tk.Button(self.root, text="Send", command=self.send_text, bg="#222222", fg="white", relief='flat')
-        send_button.place(x=730, y=670, width=50, height=30)
-
-        self.root.bind("<F2>", lambda e: Thread(target=self.listen_voice).start())
-        Thread(target=lambda: time_based_greeting()).start()
-        self.start_wake_word_listener()
-
-    def start_wake_word_listener(self):
-      def _listen():
-        from core.speech_recognition_proxy import proxy_aware_sr
-
-        while True:
-            try:
-                trigger = proxy_aware_sr.listen_with_microphone(timeout=10, phrase_time_limit=3)
-                if trigger and trigger != "error":
-                    print("Heard:", trigger)
-
-                    if "hey hornet" in trigger or trigger.strip() == "hornet":
-                        print("🔔 Wake word detected")
-                        self.add_text("[System] Wake word detected. Listening and verifying...")
-
-                        # continue to voice capture + verification
-                        from core.voice_auth import is_vansh_speaking, cleanup_temp_voice
-                        from core.voice_capture import record_voice_dynamic
-
-                        success, path, match_status = record_voice_dynamic(timeout=8, preserve_temp=True)
-                        if not success or not path:
-                            # speak("No command detected.")
-                            continue
-
-                        if match_status != "match":
-                            speak("Voice not verified. Try again.")
-                            self.add_text("[Security] Unauthorized voice.")
-                            cleanup_temp_voice(path)
-                            continue
-
-                        
-                        speak("Voice matched. Processing command.")
-                        self.add_text("[Security] Voice matched. Processing command...")
-
-                        # Use proxy-aware speech recognition
-                        command = proxy_aware_sr.recognize_audio(path)
-                        if command and command != "network error":
-                            print("You said:", command)
-                            self.add_text("You: " + command)
-                            Thread(target=lambda: self.command_handler.handle_text(command)).start()
-                        elif command == "network error":
-                            self.add_text("[Error] Network connectivity issue")
-                        else:
-                            speak("Sorry, I didn't catch that.")
-                        
-                        cleanup_temp_voice(path)
-
-            except Exception as e:
-                print("Wake error:", e)
-                continue
-
-            time.sleep(0.2)
-
-      Thread(target=_listen, daemon=True).start()
-
-
+            self.chat_log = Text(self.root, bg="#000000", fg="sky blue", font=("Consolas", 10), wrap='word', bd=0)
+            self.chat_log.place(x=0, y=600, width=800, height=100)
+            self.add_text("[System] UI Initialized. Type or say 'Hey Hornet'.")
+            
+            self.ui_initialized = True
+        except Exception as e:
+            print(f"❌ Error during UI setup: {e}")
 
     def animate(self):
         self.canvas.itemconfig(self.bg_image, image=self.frames[self.gif_index])
         self.gif_index = (self.gif_index + 1) % len(self.frames)
         self.root.after(100, self.animate)
 
+    def start_wake_word_listener(self):
+        def _listen_for_wake_word():
+            while True:
+                try:
+                    trigger = proxy_aware_sr.listen_with_microphone(timeout=None, phrase_time_limit=3)
+                    if trigger and ("hey hornet" in trigger or trigger.strip() == "hornet"):
+                        print("🔔 Wake word detected")
+                        self.add_text("[System] Wake word detected. Verifying...")
+                        self.run_voice_command()
+                except Exception as e:
+                    print(f"Wake word listener error: {e}")
+                    time.sleep(1)
+        
+        threading.Thread(target=_listen_for_wake_word, daemon=True).start()
+        
+    def run_voice_command(self):
+        command, status = listen_verify_and_transcribe()
 
-    def send_text(self, event=None):
-        user_input = self.entry.get()
-        self.entry.delete(0, END)
-        if user_input:
-            self.add_text("You: " + user_input)
-            Thread(target=lambda: self.command_handler.handle_text(user_input)).start()
+        if status == "match":
+            # speak("Voice verified.")
+            self.add_text("[Security] Voice Matched.")
+            if command and command != "network error":
+                self.add_text(f"You: {command}")
+                threading.Thread(target=lambda: self.command_handler.handle_text(command), daemon=True).start()
+            elif command == "network error":
+                self.add_text("[Error] Could not connect to speech service.")
+            else:
+                self.add_text("[System] I didn't catch that.")
+                speak("Sorry, I didn't catch that.")
+        
+        elif status in ["no-match", "too-short", "error"]:
+            self.add_text(f"[Security] Unauthorized voice detected. Status: {status}")
+            speak("Sorry, I can only be accessed by my creator.")
 
-
+    def time_based_greeting(self):
+        hour = datetime.datetime.now().hour
+        greeting = "Hello Vansh!"
+        if 5 <= hour < 12: greeting = "Good morning Vansh! How can I help you today?"
+        elif 12 <= hour < 17: greeting = "Good afternoon Vansh, how are you doing?"
+        elif 17 <= hour < 22: greeting = "Good evening Vansh! Need any assistance?"
+        speak(greeting)
+    
     def add_text(self, text):
+        if hasattr(self, 'root'):
+            self.root.after(0, self._update_chat_log, text)
+
+    def _update_chat_log(self, text):
+        if not hasattr(self, 'chat_log') or not self.root.winfo_exists(): return
         self.chat_log.config(state=tk.NORMAL)
         self.chat_log.insert(END, text + "\n")
         self.chat_log.config(state=tk.DISABLED)
         self.chat_log.see(END)
+    
+    def resource_path(self, relative_path):
+        try:
+            base_path = sys._MEIPASS
+        except AttributeError:
+            base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        return os.path.join(base_path, relative_path)
 
-    def listen_voice(self):
-        self.add_text("[System] Listening...")
-        Thread(target=self.command_handler.handle).start()
-        # command = listen_command()
-        # if command:
-        #     self.add_text("You: " + command)
-        #     Thread(target=lambda: self.command_handler.handle(command)).start()
-def cleanup_on_exit():
-    """Cleanup network settings when app exits"""
+# ==============================================================================
+#  APPLICATION STARTUP
+# ==============================================================================
+
+def startup_embedding_update():
     try:
-        from core.network_safety import network_safety
-        print("[Cleanup] Restoring network settings...")
-        network_safety.switch_mode("standard")
-        print("[Cleanup] Network cleanup completed")
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        folder = os.path.join(project_root, "voice_data")
+        embedding_path = os.path.join(folder, "vansh_embedding.pt")
+        if not os.path.exists(embedding_path):
+            print("Embedding not found, creating a new one...")
+            threading.Thread(target=update_embedding, daemon=True).start()
+            return
+            
+        emb_time = os.path.getmtime(embedding_path)
+        wav_files = [os.path.join(folder, f) for f in os.listdir(folder) if f.endswith(".wav")]
+        if wav_files and max(os.path.getmtime(p) for p in wav_files) > emb_time:
+            print("🔄 Newer voice samples detected, updating embedding...")
+            threading.Thread(target=update_embedding, daemon=True).start()
+        else:
+            print("✅ Voice embedding is up to date.")
     except Exception as e:
-        print(f"[Cleanup] Error during network cleanup: {e}")
-
-def main():
-    import atexit
-    import signal
-
-    
-
-    # Register cleanup function to run on exit
-    atexit.register(cleanup_on_exit)
-    
-    # Handle Ctrl+C and other signals
-    def signal_handler(signum, frame):
-        print("\n[Exit] Received exit signal, cleaning up...")
-        cleanup_on_exit()
-        exit(0)
-    
-    signal.signal(signal.SIGINT, signal_handler)
-    if hasattr(signal, 'SIGTERM'):
-        signal.signal(signal.SIGTERM, signal_handler)
-    
-    try:
-        root = tk.Tk()
-        app = AssistantGUI(root)
+        print(f"Error checking embedding: {e}")
         
-        # Handle window close event
-        def on_closing():
-            print("[Exit] Window closing, cleaning up...")
-            cleanup_on_exit()
-            root.destroy()
-        
-        root.protocol("WM_DELETE_WINDOW", on_closing)
-        root.mainloop()
-    except Exception as e:
-        print(f"[Error] Application error: {e}")
-        cleanup_on_exit()
-    finally:
-        print("[Exit] Application terminated")
-
-
 if __name__ == "__main__":
-    main()
+    startup_embedding_update()
+    root = tk.Tk()
+    app = AssistantGUI(root)
+    root.mainloop()

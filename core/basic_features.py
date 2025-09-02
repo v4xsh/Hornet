@@ -3,13 +3,17 @@ import time
 import datetime
 import pyautogui
 import pygame
-import subprocess
 import screen_brightness_control as sbc
 from core.text_to_speech import speak
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
 from ctypes import cast, POINTER
 from core.utils import resource_path
+import ctypes
+import winshell
+
+# ✅ CORRECTED IMPORTS: Using the new, streamlined voice capture function
+from core.voice_capture import record_and_transcribe
 
 # Screenshot setup
 home_dir = os.path.expanduser("~")
@@ -78,9 +82,12 @@ def change_volume(direction=None, percent=None):
 
 # Brightness
 def show_brightness_popup():
-    pyautogui.press("brightnessdown")
-    time.sleep(0.05)
-    pyautogui.press("brightnessup")
+    # This is a trick to show the brightness slider; requires a laptop keyboard with brightness keys.
+    # It might not work on all systems.
+    try:
+        sbc.set_brightness(sbc.get_brightness()[0])
+    except Exception:
+        pass # Ignore if it fails, as it's just for UI feedback
 
 def change_brightness(direction=None, percent=None):
     if percent is not None:
@@ -88,21 +95,20 @@ def change_brightness(direction=None, percent=None):
         show_brightness_popup()
         speak(f"Brightness set to {percent} percent.")
     else:
-        current = sbc.get_brightness(display=0)[0]
-        step = 10
-        if direction == "up":
-            sbc.set_brightness(min(current + step, 100))
-            show_brightness_popup()
-            speak("Brightness increased.")
-        elif direction == "down":
-            sbc.set_brightness(max(current - step, 0))
-            show_brightness_popup()
-            speak("Brightness decreased.")
-import ctypes
-import winshell
-import speech_recognition as sr
-from core.voice_capture import record_voice_dynamic
-from core.voice_auth import cleanup_temp_voice
+        try:
+            current = sbc.get_brightness(display=0)[0]
+            step = 10
+            if direction == "up":
+                sbc.set_brightness(min(current + step, 100))
+                show_brightness_popup()
+                speak("Brightness increased.")
+            elif direction == "down":
+                sbc.set_brightness(max(current - step, 0))
+                show_brightness_popup()
+                speak("Brightness decreased.")
+        except Exception as e:
+            speak("Sorry, I couldn't change the display brightness.")
+            print(f"Brightness control error: {e}")
 
 # Recycle Bin - Open
 def open_recycle_bin():
@@ -113,46 +119,33 @@ def open_recycle_bin():
         print("❌ Recycle bin open error:", e)
         speak("Failed to open the recycle bin.")
 
-# Ask for voice yes/no
+# ✅ CORRECTED: Replaced old logic with the new, single-function call
 def ask_yes_no(prompt):
-    speak(prompt)
-    success, path, _ = record_voice_dynamic(timeout=6)
-    if not success:
-        speak("No response detected.")
-        return False
-    try:
-        r = sr.Recognizer()
-        with sr.AudioFile(path) as source:
-            audio = r.record(source)
-            reply = r.recognize_google(audio).lower()
-            print("✔️ You said:", reply)
-            return "yes" in reply or "yeah" in reply or "sure" in reply
-    except:
-        return False
-    finally:
-        cleanup_temp_voice(path)
+    """Asks a yes/no question and returns True for yes, False for no."""
+    reply = record_and_transcribe(prompt=prompt, duration=5)
+    return "yes" in reply or "yeah" in reply or "sure" in reply or "confirm" in reply
 
 # Recycle Bin - Empty with confirmation
 def empty_recycle_bin():
     try:
-        items = list(winshell.recycle_bin())  # count files
+        items = list(winshell.recycle_bin())
         count = len(items)
 
         if count == 0:
             speak("Recycle bin is already empty.")
             return
 
+        # Uses the corrected ask_yes_no function
         confirmed = ask_yes_no(f"Are you sure you want to permanently delete {count} items from the recycle bin?")
+        
         if not confirmed:
             speak("Okay, I won't empty the recycle bin.")
             return
 
-        flags = 0x00000001 | 0x00000002 | 0x00000004  # Silent delete
-        result = ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, flags)
-        if result == 0:
-            speak(f"Deleted {count} items from the recycle bin.")
-        else:
-            speak("Could not empty the recycle bin.")
+        # Use the high-level winshell function for emptying, it's safer.
+        winshell.recycle_bin().empty(confirm=False, show_progress=False, sound=False)
+        speak(f"Deleted {count} items from the recycle bin.")
+
     except Exception as e:
         print("❌ Recycle bin empty error:", e)
         speak("An error occurred while emptying the recycle bin.")

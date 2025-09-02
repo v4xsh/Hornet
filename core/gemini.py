@@ -1,21 +1,37 @@
 import google.generativeai as genai
-from core.text_to_speech import speak
-from core.text_to_speech import stop_buffering
+import os
 
-# Gemini API Setup
-GEMINI_API_KEY = "AIzaSyDQX_kQmY6fOJV541r1y51MfsVqOAvy4Ak"
-genai.configure(api_key=GEMINI_API_KEY)
+# --- LOAD PROJECT-SPECIFIC API KEY ---
+# This looks for the key you set with the command above.
+HORNET_API_KEY = os.getenv("HORNET_GEMINI_API_KEY")
 
-gemini_model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")
+if not HORNET_API_KEY:
+    # This will stop the program if the key isn't set.
+    raise ValueError("HORNET_GEMINI_API_KEY environment variable not found. Please run the 'set' command in your terminal before running the script.")
+
+genai.configure(api_key=HORNET_API_KEY)
+
+# Using a standard, high-performance model
+gemini_model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
 def get_gemini_response(prompt):
+    """
+    Gets a response from the Gemini model.
+    """
     try:
         response = gemini_model.generate_content(prompt)
         full_reply = response.text.strip()
-        short_reply = full_reply[:300].split(".")[0].replace("*", "") + "."
-        stop_buffering()
+        
+        # A safer way to shorten the reply without causing errors
+        if "." in full_reply:
+            # Take the first sentence
+            short_reply = full_reply.split(".")[0].replace("*", "") + "."
+        else:
+            # If no sentence, just take the first 300 characters
+            short_reply = full_reply[:300].replace("*", "")
+
         return short_reply
+        
     except Exception as e:
-        stop_buffering()
-        print("Gemini Error:", e)
-        return "Sorry, I couldn't think of a reply right now."
+        print(f"❌ Gemini Error: {e}")
+        return "Sorry, I am having trouble connecting to my creative AI right now."

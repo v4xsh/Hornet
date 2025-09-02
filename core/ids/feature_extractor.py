@@ -192,4 +192,3 @@ Get-ChildItem -Path $base -ErrorAction SilentlyContinue | ForEach-Object {{
             self._tls_buffer.clear()
 
         return flows
-g
