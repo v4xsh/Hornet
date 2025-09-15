@@ -17,11 +17,10 @@ from core.extra_skills import repeat_after_me, set_timer, tell_about_person, tel
 from core.music import play_song_on_spotify
 from core.gemini import get_gemini_response
 from core.utils import resource_path
-from core.phone import call_contact, open_app_on_phone, lock_phone_screen, is_phone_connected, send_phone_basic_action
+from core.phone import call_contact, open_app_on_phone, lock_phone_screen, is_phone_connected, send_phone_basic_action,help_command
 from core.enroll_voice import update_embedding
-from core.firewall import start_firewall_monitor, stop_firewall_monitor, trace_last_threat
+# from core.firewall import start_firewall_monitor, stop_firewall_monitor, trace_last_threat
 from core.network_safety import network_safety
-from core.hand_object_detector import identify_object_in_hand
 
 class CommandHandler:
     def __init__(self, gui_instance):
@@ -46,6 +45,12 @@ class CommandHandler:
                 self.gui.add_text(f"Calling {name} via phone.")
                 call_contact(name)
                 return
+            if "help" in command or "emergency" in command:
+                speak("Emergency help activated. Sending your location and IP to your contacts.")
+                self.gui.add_text("[Phone] 🚨 Emergency help triggered")
+                help_command()
+                return
+
 
             if command.startswith("open app ") or command.startswith("open "):
                 app = command.replace("open app", "").replace("open", "").replace("in my phone", "").replace("on my phone", "").strip()
@@ -120,9 +125,7 @@ class CommandHandler:
             os.system("python jarvis_ui.py")
             return
             
-        if "what is in my hand" in command:
-            identify_object_in_hand()
-            return
+
 
         voice_contact, voice_message = extract_voice_note_command(command)
         if voice_contact and voice_message:
@@ -146,23 +149,23 @@ class CommandHandler:
                 self.gui.add_text(f"[Error] {e}")
             return
             
-        if "start firewall mode" in command or "enable hornet firewall" in command:
-            speak("Enabling Hornet Firewall Mode.")
-            self.gui.add_text("[Firewall] 🔥 Starting Hornet Firewall...")
-            start_firewall_monitor(self.gui)
-            return
+        # if "start firewall mode" in command or "enable hornet firewall" in command:
+        #     speak("Enabling Hornet Firewall Mode.")
+        #     self.gui.add_text("[Firewall] 🔥 Starting Hornet Firewall...")
+        #     start_firewall_monitor(self.gui)
+        #     return
 
-        if "stop firewall mode" in command or "disable hornet firewall" in command:
-            speak("Disabling Hornet Firewall Mode.")
-            self.gui.add_text("[Firewall] 🛑 Stopping Hornet Firewall...")
-            stop_firewall_monitor()
-            return
+        # if "stop firewall mode" in command or "disable hornet firewall" in command:
+        #     speak("Disabling Hornet Firewall Mode.")
+        #     self.gui.add_text("[Firewall] 🛑 Stopping Hornet Firewall...")
+        #     stop_firewall_monitor()
+        #     return
 
-        if "trace last attack" in command or "trace threat" in command:
-            speak("Tracing the origin of the last threat.")
-            self.gui.add_text("[Firewall] 🌍 Visualizing threat IP...")
-            trace_last_threat()
-            return
+        # if "trace last attack" in command or "trace threat" in command:
+        #     speak("Tracing the origin of the last threat.")
+        #     self.gui.add_text("[Firewall] 🌍 Visualizing threat IP...")
+        #     trace_last_threat()
+        #     return
         
         # Network Safety Commands
         if "what is my ip" in command or "what is my current ip" in command or "show my ip" in command:
@@ -228,35 +231,35 @@ class CommandHandler:
             network_safety.show_tor_circuit()
             return
         
-        if "list firewall blocks" in command or "show blocked ips" in command:
-            from core.firewall import blocked_ips
-            if blocked_ips:
-                blocked_list = ", ".join(blocked_ips)
-                speak(f"Currently blocked IPs: {blocked_list}")
-                self.gui.add_text(f"[Firewall] Blocked IPs: {blocked_list}")
-            else:
-                speak("No IPs are currently blocked")
-                self.gui.add_text("[Firewall] No blocked IPs")
-            return
+        # if "list firewall blocks" in command or "show blocked ips" in command:
+        #     from core.firewall import blocked_ips
+        #     if blocked_ips:
+        #         blocked_list = ", ".join(blocked_ips)
+        #         speak(f"Currently blocked IPs: {blocked_list}")
+        #         self.gui.add_text(f"[Firewall] Blocked IPs: {blocked_list}")
+        #     else:
+        #         speak("No IPs are currently blocked")
+        #         self.gui.add_text("[Firewall] No blocked IPs")
+        #     return
         
-        if "demo firewall" in command or "firewall demo" in command or "demo mode" in command:
-            speak("Starting firewall demo mode")
-            self.gui.add_text("[Firewall] Starting demo mode...")
-            from core.firewall import start_firewall_monitor
-            start_firewall_monitor(self.gui, demo=True)
-            return
+        # if "demo firewall" in command or "firewall demo" in command or "demo mode" in command:
+        #     speak("Starting firewall demo mode")
+        #     self.gui.add_text("[Firewall] Starting demo mode...")
+        #     from core.firewall import start_firewall_monitor
+        #     start_firewall_monitor(self.gui, demo=True)
+        #     return
         
-        if "scan traffic" in command or "analyze traffic" in command or "scan incoming traffic" in command:
-            from core.firewall import analyze_incoming_traffic
-            analyze_incoming_traffic(self.gui)
-            return
+        # if "scan traffic" in command or "analyze traffic" in command or "scan incoming traffic" in command:
+        #     from core.firewall import analyze_incoming_traffic
+        #     analyze_incoming_traffic(self.gui)
+        #     return
         
-        if "firewall stats" in command or "firewall statistics" in command:
-            from core.firewall import get_firewall_stats
-            stats = get_firewall_stats()
-            speak(f"Firewall statistics: {stats['blocked_ips']} IPs blocked. Monitoring is {'active' if stats['monitoring_active'] else 'inactive'}.")
-            self.gui.add_text(f"[Firewall Stats] Blocked: {stats['blocked_ips']} IPs, Status: {'Active' if stats['monitoring_active'] else 'Inactive'}")
-            return
+        # if "firewall stats" in command or "firewall statistics" in command:
+        #     from core.firewall import get_firewall_stats
+        #     stats = get_firewall_stats()
+        #     speak(f"Firewall statistics: {stats['blocked_ips']} IPs blocked. Monitoring is {'active' if stats['monitoring_active'] else 'inactive'}.")
+        #     self.gui.add_text(f"[Firewall Stats] Blocked: {stats['blocked_ips']} IPs, Status: {'Active' if stats['monitoring_active'] else 'Inactive'}")
+        #     return
 
         if "generate project" in command or "create project" in command or "make project" in command:
            from core.ai_code_generator import generate_code_project

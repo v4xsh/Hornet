@@ -19,7 +19,7 @@ def play_top_youtube_video(query, driver):
         search_box.send_keys(Keys.RETURN)
         time.sleep(3)
 
-        videos = driver.find_elements(By.ID, "video-title")
+        videos = driver.find_elements(By.ID, "video-title") 
         if videos:
             videos[0].click()
         else:

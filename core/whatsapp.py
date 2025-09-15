@@ -37,7 +37,7 @@ def slugify(text):
 
 # ✅ Send plain text message
 def send_whatsapp_message(contact_name, message):
-    chrome_driver_path = str(Path("drivers/chromedriver.exe").resolve())
+    chrome_driver_path = r"C:\Users\Vansh\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe"
     brave_path = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
     if not os.path.exists(brave_path):
@@ -84,7 +84,7 @@ def send_whatsapp_voice_note(contact_name, message_text):
         print("❌ Failed to generate voice note:", e)
         return
 
-    chrome_driver_path = str(Path("drivers/chromedriver.exe").resolve())
+    chrome_driver_path = r"C:\Users\Vansh\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe"
     brave_path = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 
     if not os.path.exists(brave_path):

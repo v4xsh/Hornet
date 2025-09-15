@@ -11,8 +11,6 @@ from ctypes import cast, POINTER
 from core.utils import resource_path
 import ctypes
 import winshell
-
-# ✅ CORRECTED IMPORTS: Using the new, streamlined voice capture function
 from core.voice_capture import record_and_transcribe
 
 # Screenshot setup
@@ -118,8 +116,6 @@ def open_recycle_bin():
     except Exception as e:
         print("❌ Recycle bin open error:", e)
         speak("Failed to open the recycle bin.")
-
-# ✅ CORRECTED: Replaced old logic with the new, single-function call
 def ask_yes_no(prompt):
     """Asks a yes/no question and returns True for yes, False for no."""
     reply = record_and_transcribe(prompt=prompt, duration=5)

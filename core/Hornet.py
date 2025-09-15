@@ -2,98 +2,60 @@
 
 # --- IMPORTS ---
 import tkinter as tk
-from tkinter import PhotoImage, Scrollbar, Text, END, DISABLED, NORMAL
+from tkinter import PhotoImage, Text, END, DISABLED, NORMAL
 from PIL import Image, ImageTk, ImageSequence
 import threading
 import time
 import os
 import sys
 import datetime
+import struct
 
 # --- CORE MODULES ---
 from core.text_to_speech import speak
 from core.voice_auth import is_vansh_speaking
 from core.command_handler import CommandHandler
 from core.enroll_voice import update_embedding
-from core.speech_recognition_proxy import proxy_aware_sr 
+from core.speech_recognition_proxy import proxy_aware_sr
 
 # --- UTILITIES ---
-import sounddevice as sd
+import pvporcupine
+import pyaudio
 import numpy as np
-import soundfile as sf
+from scipy.io import wavfile
 
 # ==============================================================================
 #  UNIFIED VOICE CAPTURE FUNCTION
 # ==============================================================================
+# This function no longer records. It just receives audio data and processes it.
+def listen_verify_and_transcribe(audio_data, fs=16000):
+    print("🎙️ Verifying and transcribing captured audio...")
 
-def listen_verify_and_transcribe(timeout=8):
-    fs = 16000
-    silence_limit_sec = 2.0
-    threshold = 0.01
-
-    print("🎙️  Listening for command...")
-    recorded_frames = []
-    is_speaking = False
-    silence_frames = 0
-    max_silence_frames = int(silence_limit_sec * fs / 1024)
-
-    def callback(indata, frames, time, status):
-        nonlocal is_speaking, silence_frames
-        if np.linalg.norm(indata) > threshold:
-            is_speaking = True
-            silence_frames = 0
-        elif is_speaking:
-            silence_frames += 1
-        if is_speaking:
-            recorded_frames.append(indata.copy())
-
-    stream = sd.InputStream(samplerate=fs, channels=1, dtype='float32', callback=callback)
-    with stream:
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            if is_speaking and silence_frames > max_silence_frames:
-                break
-            time.sleep(0.1)
-
-    if not recorded_frames:
-        print("📉 No voice detected.")
+    if audio_data is None or len(audio_data) < fs / 2: # Check for short audio
+        print("📉 Audio too short or empty.")
         return None, "no-voice"
 
-    audio_data = np.concatenate(recorded_frames).flatten()
+
     match_status = is_vansh_speaking(audio_data, sr=fs)
 
     if match_status != "match":
         return None, match_status
 
-    # ✅ --- START OF THE FIX ---
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..")) 
-    folder = os.path.join(project_root, "voice_data")
-    os.makedirs(folder, exist_ok=True)
-    
-    existing_samples = [f for f in os.listdir(folder) if f.startswith("sample_") and f.endswith(".wav")]
-    
-    if not existing_samples:
-        next_index = 1
-    else:
-        # Find the highest number in the existing filenames and add 1
-        indices = [int(f.split('_')[1].split('.')[0]) for f in existing_samples]
-        next_index = max(indices) + 1
-        
-    final_path = os.path.join(folder, f"sample_{next_index}.wav")
-    sf.write(final_path, audio_data, fs)
-    # ✅ --- END OF THE FIX ---
-    
-    print(f"✅ Verified voice saved for training -> {final_path}")
+    print(f"✅ Verified voice.")
+
+    # Save a temporary file for the speech recognition service
+    temp_wav_path = os.path.join(os.path.dirname(__file__), "temp_command.wav")
+    wavfile.write(temp_wav_path, fs, (audio_data * 32767).astype(np.int16)) # Convert float to int16 for saving
     
     print("🎤 Transcribing command...")
-    command = proxy_aware_sr.recognize_audio(final_path)
+    command = proxy_aware_sr.recognize_audio(temp_wav_path)
+    os.remove(temp_wav_path)
     
     return command, match_status
 
 # ==============================================================================
 #  GUI AND MAIN APP LOGIC
 # ==============================================================================
-
 class AssistantGUI:
     def __init__(self, root):
         self.root = root
@@ -102,15 +64,49 @@ class AssistantGUI:
         self.root.configure(bg="black")
         self.root.resizable(False, False)
         self.root.wm_attributes("-topmost", True)
-        self.command_handler = CommandHandler(self)
+        self.command_handler = CommandHandler(self) # CommandHandler is now loaded normally
         
+        # --- PICOVOICE PORCUPINE SETUP ---
+        try:
+            PICOVOICE_ACCESS_KEY = "DNblK3K6UO/hD+TWI1eKZg+h45gg+022eQay6D/G2nkjf/txR052YA=="
+            model_file_name = None
+            for f in os.listdir(self.resource_path("assets")):
+                if f.startswith("Hornet") and f.endswith(".ppn"):
+                    model_file_name = f
+                    break
+            
+            if not model_file_name:
+                raise FileNotFoundError("Could not find the Hornet .ppn model file in the assets folder.")
+
+            keyword_path = self.resource_path(os.path.join("assets", model_file_name))
+
+            self.porcupine = pvporcupine.create(
+                access_key=PICOVOICE_ACCESS_KEY,
+                keyword_paths=[keyword_path]
+            )
+            self.pa = pyaudio.PyAudio()
+            self.audio_stream = self.pa.open(
+                rate=self.porcupine.sample_rate,
+                channels=1,
+                format=pyaudio.paInt16,
+                input=True,
+                frames_per_buffer=self.porcupine.frame_length
+            )
+            print("✅ PicoVoice Porcupine engine initialized for 'Hornet'.")
+        except Exception as e:
+            print(f"❌ Error initializing Porcupine: {e}")
+            self.porcupine = None
+        # --- END OF SETUP ---
+
         self.ui_initialized = False
         self.setup_ui()
         
         if self.ui_initialized:
-            self.root.bind("<F2>", lambda e: threading.Thread(target=self.run_voice_command, daemon=True).start())
             threading.Thread(target=self.time_based_greeting, daemon=True).start()
-            self.start_wake_word_listener()
+            if self.porcupine:
+                self.start_wake_word_listener()
+            else:
+                 self.add_text("[FATAL ERROR] Wake Word Engine failed to start. Check Access Key or .ppn file.")
         else:
             print("❌ UI setup failed. Halting background thread initialization.")
             if hasattr(self, 'chat_log'):
@@ -137,7 +133,7 @@ class AssistantGUI:
             
             self.chat_log = Text(self.root, bg="#000000", fg="sky blue", font=("Consolas", 10), wrap='word', bd=0)
             self.chat_log.place(x=0, y=600, width=800, height=100)
-            self.add_text("[System] UI Initialized. Type or say 'Hey Hornet'.")
+            self.add_text("[System] UI Initialized. Say 'Hornet'.")
             
             self.ui_initialized = True
         except Exception as e:
@@ -149,35 +145,65 @@ class AssistantGUI:
         self.root.after(100, self.animate)
 
     def start_wake_word_listener(self):
-        def _listen_for_wake_word():
+        def _listen_continuously():
+            print("🎧 Listening for 'Hornet'...")
             while True:
                 try:
-                    trigger = proxy_aware_sr.listen_with_microphone(timeout=None, phrase_time_limit=3)
-                    if trigger and ("hey hornet" in trigger or trigger.strip() == "hornet"):
-                        print("🔔 Wake word detected")
-                        self.add_text("[System] Wake word detected. Verifying...")
-                        self.run_voice_command()
+                    pcm = self.audio_stream.read(self.porcupine.frame_length)
+                    pcm = struct.unpack_from("h" * self.porcupine.frame_length, pcm)
+
+                    keyword_index = self.porcupine.process(pcm)
+
+                    if keyword_index >= 0:
+                        print("🔔 Wake word 'Hornet' detected!")
+                        self.add_text("[System] Wake word detected. Listening...")
+                        self._record_and_process_command(pcm)
+                        print("🎧 Listening for 'Hornet'...")
+
                 except Exception as e:
                     print(f"Wake word listener error: {e}")
                     time.sleep(1)
+
+        threading.Thread(target=_listen_continuously, daemon=True).start()
+
+    def _record_and_process_command(self, first_chunk):
+        recorded_frames = [first_chunk]
+        silence_limit_sec = 1.5
+        threshold = 500
         
-        threading.Thread(target=_listen_for_wake_word, daemon=True).start()
+        silence_frames = 0
+        max_silence_frames = int(silence_limit_sec * self.porcupine.sample_rate / self.porcupine.frame_length)
+
+        while True:
+            pcm_chunk_raw = self.audio_stream.read(self.porcupine.frame_length)
+            pcm_chunk = struct.unpack_from("h" * self.porcupine.frame_length, pcm_chunk_raw)
+            recorded_frames.append(pcm_chunk)
+
+            intensity = np.mean(np.abs(pcm_chunk))
+            if intensity < threshold:
+                silence_frames += 1
+            else:
+                silence_frames = 0
+
+            if silence_frames > max_silence_frames:
+                break
         
-    def run_voice_command(self):
-        command, status = listen_verify_and_transcribe()
+        print("✅ Command recording finished.")
+        
+        audio_data_int16 = np.hstack(recorded_frames)
+        audio_data_float32 = audio_data_int16.astype(np.float32) / 32767.0
+        
+        command, status = listen_verify_and_transcribe(audio_data_float32)
 
         if status == "match":
-            # speak("Voice verified.")
             self.add_text("[Security] Voice Matched.")
-            if command and command != "network error":
-                self.add_text(f"You: {command}")
-                threading.Thread(target=lambda: self.command_handler.handle_text(command), daemon=True).start()
-            elif command == "network error":
-                self.add_text("[Error] Could not connect to speech service.")
-            else:
-                self.add_text("[System] I didn't catch that.")
-                speak("Sorry, I didn't catch that.")
-        
+            if self.command_handler and command and command != "network error":
+                command_phrase = command.lower().replace("hornet", "").strip()
+                if command_phrase:
+                    self.add_text(f"You: {command_phrase}")
+                    threading.Thread(target=lambda: self.command_handler.handle_text(command_phrase), daemon=True).start()
+                else:
+                    self.add_text("[System] No command followed wake word.")
         elif status in ["no-match", "too-short", "error"]:
             self.add_text(f"[Security] Unauthorized voice detected. Status: {status}")
             speak("Sorry, I can only be accessed by my creator.")
@@ -237,3 +263,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = AssistantGUI(root)
     root.mainloop()
+

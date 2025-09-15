@@ -15,7 +15,7 @@ from pathlib import Path
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-CHROMEDRIVER_PATH = str(BASE_DIR / "drivers" / "chromedriver.exe")
+CHROMEDRIVER_PATH =  r"C:\Users\Vansh\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe"
 BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 USER_DATA_DIR = os.path.join(os.environ["USERPROFILE"], "AppData", "Local", "BraveSoftware", "Brave-Browser", "User Data")
 
@@ -51,7 +51,7 @@ def send_mail_gmail(to_email, subject, body):
 
         for attempt in range(2):
             # ✅ CORRECTED: Reverted to the single function call
-            response = record_and_transcribe(prompt="Here is the mail. Do you want me to send it?", duration=5)
+            response = record_and_transcribe(prompt="Here is the mail. Do you want me to send it?", duration=7)
             
             if any(kw in response for kw in ["yes", "send", "send it", "confirm"]):
                 send_btn = compose_box.find_element(By.CSS_SELECTOR, "div[role='button'][data-tooltip*='Send']")
@@ -73,14 +73,14 @@ def send_mail_gmail(to_email, subject, body):
 
 def handle_send_mail(command=None):
     # ✅ CORRECTED: Reverted to the single function call
-    username_raw = record_and_transcribe(prompt="Let's begin. Please spell the email username letter by letter.", duration=10)
+    username_raw = record_and_transcribe(prompt="Please spell the email username", duration=10)
     if not username_raw:
         speak("Sorry, I couldn't hear the username.")
         return
     username = username_raw.replace(" dash ", "-").replace(" underscore ", "_").replace(" ", "")
 
     # ✅ CORRECTED: Reverted to the single function call
-    domain_input = record_and_transcribe(prompt="Which domain is it? Gmail, Yahoo, or Outlook?", duration=6)
+    domain_input = record_and_transcribe(prompt="Which domain is it?", duration=6)
     if not domain_input:
         speak("Sorry, I couldn't hear the domain.")
         return

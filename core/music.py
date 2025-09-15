@@ -8,7 +8,7 @@ from pathlib import Path
 
 # ✅ Get correct path to drivers folder regardless of script location
 BASE_DIR = Path(__file__).resolve().parent.parent
-CHROMEDRIVER_PATH = str(BASE_DIR / "drivers" / "chromedriver.exe")
+CHROMEDRIVER_PATH = r"C:\Users\Vansh\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe"
 BRAVE_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
 USER_DATA_DIR = os.path.join(os.environ["USERPROFILE"], "AppData", "Local", "BraveSoftware", "Brave-Browser", "User Data")
 
