@@ -176,3 +176,4 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = IDSUI(root)
     root.mainloop()
+

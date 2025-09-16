@@ -73,3 +73,4 @@ def search_and_type_on_site(site, query):
         driver.get(f"https://www.{site}.com")
 
     return None  # Only YouTube returns a driver
+

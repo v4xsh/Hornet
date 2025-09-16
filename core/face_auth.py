@@ -5,6 +5,7 @@ from deepface import DeepFace
 import mediapipe as mp
 import pyttsx3
 
+
 def speak(text):
     engine = pyttsx3.init()
     engine.say(text)
@@ -118,3 +119,4 @@ def verify_face(threshold=0.5):
 if __name__ == "__main__":
     result = verify_face()
     print("Verification result:", result)
+

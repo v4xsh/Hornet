@@ -80,3 +80,4 @@ def tell_about_person(command):
         speak(f"There are multiple people named {name}. Please be more specific.")
     except wikipedia.exceptions.PageError:
         speak(f"I couldn't find any information about {name}.")
+

@@ -78,3 +78,4 @@ def search_in_chrome(query):
     except Exception as e:
         print("❌ Error during Chrome automation:", e)
         speak("Sorry, I couldn't complete the search.")
+

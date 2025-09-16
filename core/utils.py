@@ -12,3 +12,4 @@ def resource_path(relative_path):
     full_path = os.path.join(base_path, relative_path)
     full_path = os.path.abspath(full_path)  # ✅ Ensures proper C:\... style
     return full_path
+

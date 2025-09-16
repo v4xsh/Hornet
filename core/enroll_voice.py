@@ -80,3 +80,4 @@ def update_embedding():
 
 if __name__ == "__main__":
     enroll_verified_live_voices(num_samples=500)
+

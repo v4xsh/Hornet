@@ -95,3 +95,4 @@ class IDSService:
                     self.enf.apply(d, f)
 
             time.sleep(self.cfg.poll_interval_ms / 1000)
+

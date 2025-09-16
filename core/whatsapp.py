@@ -152,3 +152,4 @@ def extract_voice_note_command(command):
         message = match.group(4).strip()
         return contact, message
     return None, None
+

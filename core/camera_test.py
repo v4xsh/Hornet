@@ -16,3 +16,4 @@ def test_all_cameras(max_tested=5):
             print(f"[❌] Camera index {i} not available.")
 
 test_all_cameras()
+

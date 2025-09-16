@@ -81,3 +81,4 @@ def view_recording():
     except Exception as e:
         print("❌ View Recording Error:", e)
         speak("I couldn't open the recording.")
+

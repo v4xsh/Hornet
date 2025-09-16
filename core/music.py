@@ -43,3 +43,4 @@ def play_song_on_spotify(song_name):
 
     except Exception as e:
         print("❌ Error:", e)
+

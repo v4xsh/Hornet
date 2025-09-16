@@ -52,3 +52,4 @@ def enroll_face_samples():
 
 if __name__ == "__main__":
     enroll_face_samples()
+

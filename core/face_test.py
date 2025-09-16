@@ -37,3 +37,4 @@ np.save(embedding_path, avg_embedding)
 print(f"🎉 Saved averaged reference embedding at {embedding_path}")
 print(f"Embedding shape: {avg_embedding.shape}")
 print(f"First 5 values: {avg_embedding[:5]}")
+

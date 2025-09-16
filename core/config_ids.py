@@ -13,3 +13,4 @@ class IDSConfig:
     dry_run: bool = True                   # True = log only, don’t enforce
     allowlisted_domains: set = field(default_factory=lambda: {"microsoft.com","google.com","openai.com"})
     suspicious_ports: set = field(default_factory=lambda: {4444,1337,23,31337})
+

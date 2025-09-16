@@ -162,3 +162,4 @@ Generate a complete frontend-only project make sure is fully functional on copy 
 if __name__ == "__main__":
     user_input = input("🗣️ What project do you want to generate? ")
     generate_code_project(user_input)
+

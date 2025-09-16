@@ -844,3 +844,4 @@ CircuitStreamTimeout 10
 
 # Global instance
 network_safety = NetworkSafety()
+

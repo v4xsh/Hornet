@@ -4,3 +4,4 @@ class SupervisedDetector:
 
     def predict_proba(self, flows):
         return [0.05] * len(flows)  # placeholder
+

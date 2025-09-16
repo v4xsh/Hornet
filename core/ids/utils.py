@@ -11,3 +11,4 @@ def os_family() -> str:
 
 def hash_endpoint(ip: str, port: int) -> str:
     return hashlib.sha1(f"{ip}:{port}".encode()).hexdigest()[:10]
+

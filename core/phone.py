@@ -135,3 +135,4 @@ def help_command():
             send_whatsapp_message(contact, message)
         except Exception as e:
             print(f"❌ Failed to send message to {contact}: {e}")
+

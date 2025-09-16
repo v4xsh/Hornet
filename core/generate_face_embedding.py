@@ -34,3 +34,4 @@ def generate_average_embedding_from_existing():
 
 if __name__ == "__main__":
     generate_average_embedding_from_existing()
+

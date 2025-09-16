@@ -13,3 +13,4 @@ class Reputation:
             return 0.6
         age = now - self.first_seen[key]
         return max(0.1, 0.6 - 0.0001 * age)
+

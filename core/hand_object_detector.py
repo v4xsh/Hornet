@@ -57,3 +57,4 @@ def identify_object_in_hand():
 
     description = predict_object(frame)
     speak(f"It looks like you're holding or showing: {description}.")
+

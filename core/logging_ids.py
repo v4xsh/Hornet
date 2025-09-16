@@ -10,3 +10,4 @@ def get_ids_logger(name="hornet.ids"):
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
     return logger
+
