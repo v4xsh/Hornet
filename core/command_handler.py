@@ -15,7 +15,7 @@ from core.screen_recording import start_screen_recording, stop_screen_recording,
 from core.basic_features import change_volume, change_brightness, take_screenshot, view_screenshot, open_recycle_bin, empty_recycle_bin
 from core.extra_skills import repeat_after_me, set_timer, tell_about_person, tell_about_topic, explain_meaning
 from core.music import play_song_on_spotify
-from core.gemini import get_gemini_response
+from core.local_llm import get_local_llm_response
 from core.utils import resource_path
 from core.phone import call_contact, open_app_on_phone, lock_phone_screen, is_phone_connected, send_phone_basic_action,help_command
 from core.enroll_voice import update_embedding
@@ -316,7 +316,7 @@ class CommandHandler:
             search_in_chrome(search_term)
             return
 
-        if "view screenshot" in command or "show screenshot" in command:
+        if "view screenshot" in command or "show screenshot" in command or "show screen shot" in command:
             view_screenshot()
             return
             
@@ -328,7 +328,7 @@ class CommandHandler:
             empty_recycle_bin()
             return
 
-        if "screenshot" in command:
+        if "screenshot" in command or "screen shot" in command:
             take_screenshot()
             return
 
@@ -352,7 +352,7 @@ class CommandHandler:
                 speak("I couldn't find a recording to show.")
             return
 
-        if "send a mail to" in command:
+        if "send a mail" in command or "send an email" in command or "send a gmail" in command:
             handle_send_mail(command)
             return
 
@@ -418,9 +418,9 @@ class CommandHandler:
             self.gui.root.quit()
             return
 
-        # # Gemini fallback
-        # speak("I'm not sure how to do that, but let me ask my generative AI.")
-        # self.gui.add_text("AI is thinking...")
-        # gemini_response = get_gemini_response(command)
-        # speak(gemini_response)
-        # self.gui.add_text("AI: " + gemini_response)
+        # Local LLM fallback for any command not understood
+        speak("I'm not sure how to do that, but let me think about it.")
+        self.gui.add_text("AI is thinking...")
+        llm_response = get_local_llm_response(command)
+        speak(llm_response)
+        self.gui.add_text("AI: " + llm_response)

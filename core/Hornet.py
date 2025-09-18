@@ -106,7 +106,13 @@ class AssistantGUI:
             if self.porcupine:
                 self.start_wake_word_listener()
             else:
-                 self.add_text("[FATAL ERROR] Wake Word Engine failed to start. Check Access Key or .ppn file.")
+                self.add_text("[FATAL ERROR] Wake Word Engine failed to start. Check Access Key or .ppn file.")
+            
+            # ✅ --- START OF NEW CODE ---
+            # Start the text input loop in a separate thread
+            threading.Thread(target=self.start_text_input_listener, daemon=True).start()
+            # ✅ --- END OF NEW CODE ---
+            
         else:
             print("❌ UI setup failed. Halting background thread initialization.")
             if hasattr(self, 'chat_log'):
@@ -133,7 +139,7 @@ class AssistantGUI:
             
             self.chat_log = Text(self.root, bg="#000000", fg="sky blue", font=("Consolas", 10), wrap='word', bd=0)
             self.chat_log.place(x=0, y=600, width=800, height=100)
-            self.add_text("[System] UI Initialized. Say 'Hornet'.")
+            self.add_text("[System] UI Initialized. Say 'Hornet' or type a command below.")
             
             self.ui_initialized = True
         except Exception as e:
@@ -166,6 +172,24 @@ class AssistantGUI:
 
         threading.Thread(target=_listen_continuously, daemon=True).start()
 
+    # ✅ --- START OF NEW CODE ---
+    def start_text_input_listener(self):
+        """A simple loop that runs in the command prompt for text input."""
+        print("⌨️  Text input is active. Type a command and press Enter.")
+        while True:
+            try:
+                command = input("You: ")
+                if command:
+                    # No voice verification needed for text commands
+                    # We send the command directly to the handler in a new thread
+                    threading.Thread(target=lambda: self.command_handler.handle_text(command), daemon=True).start()
+            except EOFError:
+                # This handles the program closing gracefully
+                break
+            except Exception as e:
+                print(f"Error in text input loop: {e}")
+    # ✅ --- END OF NEW CODE ---
+    
     def _record_and_process_command(self, first_chunk):
         recorded_frames = [first_chunk]
         silence_limit_sec = 1.5
@@ -206,7 +230,7 @@ class AssistantGUI:
                     self.add_text("[System] No command followed wake word.")
         elif status in ["no-match", "too-short", "error"]:
             self.add_text(f"[Security] Unauthorized voice detected. Status: {status}")
-            speak("Sorry, I can only be accessed by my creator.")
+            speak("Sorry, I can only be accessed by Vansh.")
 
     def time_based_greeting(self):
         hour = datetime.datetime.now().hour
@@ -263,5 +287,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = AssistantGUI(root)
     root.mainloop()
-
-

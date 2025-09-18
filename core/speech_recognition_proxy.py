@@ -16,14 +16,14 @@ class WhisperSpeechRecognition:
 
         # List of names to detect
         self.common_names = [
-            "vansh", "milap", "utkarsh", "shivansh", "yash", "aditya"
+            "vansh", "milap", "utkarsh", "shivansh", "yash", "aditya" ,
         ]
 
         # Precompute phonetic codes
         self.name_phonetic_map = {name: phonetics.dmetaphone(name)[0] for name in self.common_names}
 
         # Create an initial prompt for biasing the model toward names
-        self.initial_prompt = "vansh milap utkarsh shivansh yash aditya hornet"
+        self.initial_prompt = "vansh milap utkarsh shivansh yash aditya hornet "
 
     def correct_names(self, text):
         words = text.split()

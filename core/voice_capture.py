@@ -55,3 +55,4 @@ def record_and_transcribe(prompt, duration=10):
 
     return text
 
+    
