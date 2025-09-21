@@ -7,7 +7,7 @@ import requests
 from core.whatsapp import send_whatsapp_message  # Only text messages
 
 # Emergency contacts
-EMERGENCY_CONTACTS = ["Yash"]
+EMERGENCY_CONTACTS = ["Milap"]
 
 # ==========================
 # Core Phone Functions
