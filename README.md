@@ -26,9 +26,9 @@ Hornet is a **fully local, voice-driven AI assistant** and **custom OS bootloade
 
 ## 📊 Benchmarks
 
-- **Response Time**: 3.5–4s (with security enabled)  
+- **Response Time**: 3.5–5s (with security enabled)  
 - **Privacy**: 100% on-device, no data sent to external servers  
-- **Comparison**: Faster and more secure than cloud-only assistants like Gemini (5–7s, cloud-dependent)  
+- **Comparison**: Faster and more secure than cloud-only assistants like Gemini (6–9s, cloud-dependent)  
 
 ---
 
